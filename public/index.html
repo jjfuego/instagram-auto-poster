@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Post Pics</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .settings-panel, .preview-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            flex: 1;
+        }
+        .settings-panel {
+            max-width: 400px;
+        }
+        .preview-panel {
+            min-height: 500px;
+        }
+        .section {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .button {
+            background: #0095f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .button:hover {
+            background: #0081d6;
+        }
+        .button.secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .button.secondary:hover {
+            background: #e0e0e0;
+        }
+        .status {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+        select, input {
+            width: 100%;
+            padding: 8px;
+            margin: 4px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        #previewImage {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            margin-bottom: 16px;
+        }
+        .caption-preview {
+            background: #f8f8f8;
+            padding: 16px;
+            border-radius: 4px;
+            margin-top: 16px;
+        }
+        .time-slots {
+            margin: 10px 0;
+        }
+        .time-slot {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        .time-slot input {
+            margin-right: 10px;
+        }
+        .notifications {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        .notification {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            animation: slideIn 0.3s ease-out;
+        }
+        .notification.info { background: #e3f2fd; }
+        .notification.success { background: #e8f5e9; }
+        .notification.warning { background: #fff3e0; }
+        .notification.error { background: #ffebee; }
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        .stats {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .pending-posts {
+            margin: 20px 0;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .pending-post {
+            margin: 15px 0;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+        .pending-post img {
+            max-width: 300px;
+            max-height: 300px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        .pending-post .caption {
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .pending-post .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .automation-status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            background: #e3f2fd;
+            text-align: center;
+        }
+        .button.confirm { background: #4caf50; color: white; }
+        .button.reject { background: #f44336; color: white; }
+
+        .edit-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .edit-modal-content {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .edit-modal textarea {
+            width: 100%;
+            min-height: 150px;
+            margin: 10px 0;
+            padding: 10px;
+            font-family: monospace;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+        }
+
+        .edit-modal .tabs {
+            display: flex;
+            margin-bottom: 15px;
+        }
+
+        .edit-modal .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+
+        .edit-modal .tab.active {
+            border-bottom-color: #1976d2;
+            color: #1976d2;
+        }
+
+        .edit-modal .tab-content {
+            display: none;
+        }
+
+        .edit-modal .tab-content.active {
+            display: block;
+        }
+
+        .edit-history {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .edit-history-item {
+            margin: 5px 0;
+            padding: 5px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .instagram-preview {
+            max-width: 400px;
+            background: white;
+            border: 1px solid #dbdbdb;
+            border-radius: 3px;
+            margin: 20px auto;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .instagram-preview .header {
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #dbdbdb;
+        }
+
+        .instagram-preview .profile-pic {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            margin-right: 12px;
+            background: #fafafa;
+        }
+
+        .instagram-preview .username {
+            font-weight: 600;
+            color: #262626;
+        }
+
+        .instagram-preview .post-image {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+        }
+
+        .instagram-preview .caption {
+            padding: 16px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #262626;
+            white-space: pre-wrap;
+        }
+
+        .project-series {
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .project-series input[type="text"],
+        .project-series input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .style-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .style-option {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .style-option.active {
+            border-color: #1976d2;
+            background: #e3f2fd;
+        }
+
+        .style-option .emoji {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .instagram-preview {
+            max-width: 400px;
+            margin: 20px auto;
+            border: 1px solid #dbdbdb;
+            border-radius: 3px;
+            background: white;
+        }
+
+        .preview-header {
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #dbdbdb;
+        }
+
+        .profile-pic {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .username {
+            font-weight: 600;
+        }
+
+        .post-image {
+            width: 100%;
+            height: auto;
+        }
+
+        .preview-caption {
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        .pending-post {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #dbdbdb;
+            border-radius: 3px;
+        }
+
+        .post-details {
+            margin-left: 10px;
+        }
+
+        .post-caption {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .post-status {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .post-time {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .folder-list {
+            margin: 15px 0;
+        }
+
+        .folder-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+
+        .folder-item:hover {
+            background: #f5f5f5;
+        }
+
+        .modal-actions {
+            text-align: right;
+            margin-top: 15px;
+        }
+
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="settings-panel">
+            <div class="section">
+                <h3>1. Connect Dropbox</h3>
+                <div>
+                    <button id="connectDropboxBtn" class="button">Connect to Dropbox</button>
+                    <div id="dropboxStatus" class="status">Not connected to Dropbox</div>
+                </div>
+                <div id="folderSelector" style="display: none;">
+                    <button id="selectFolderBtn" class="button">Select Folder</button>
+                    <div id="selectedFolder" class="status">No folder selected</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>2. Configure Posting</h3>
+                <div>
+                    <label>Caption Style:</label>
+                    <select id="captionStyle">
+                        <option value="professional">👔 Professional</option>
+                        <option value="artistic">🎨 Artistic</option>
+                        <option value="casual">😊 Casual</option>
+                        <option value="minimal">⚪ Minimal</option>
+                        <option value="storytelling">📖 Storytelling</option>
+                        <option value="technical">💻 Technical</option>
+                    </select>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <label>Post Frequency:</label>
+                    <select id="postFrequency">
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>3. Preview & Schedule</h3>
+                <div id="previewArea">
+                    <div class="instagram-preview">
+                        <div class="preview-header">
+                            <img src="https://via.placeholder.com/30" class="profile-pic">
+                            <span class="username">Your Instagram</span>
+                        </div>
+                        <img id="previewImage" src="https://via.placeholder.com/400" class="post-image">
+                        <div class="preview-caption" id="previewCaption">
+                            Your caption will appear here...
+                        </div>
+                    </div>
+                </div>
+                <div id="imageStats" class="status"></div>
+                <button id="scheduleBtn" class="button">Schedule Posts</button>
+            </div>
+
+            <div class="section">
+                <h3>4. Pending Posts</h3>
+                <div id="pendingPosts"></div>
+            </div>
+        </div>
+
+        <div class="preview-panel">
+            <h3>Post Preview</h3>
+            <img id="previewImage" src="https://via.placeholder.com/400x400" alt="Preview">
+            <div class="caption-preview">
+                <div id="previewCaption">Select a folder to preview posts...</div>
+            </div>
+            <button id="testPostBtn" class="button" style="margin-top: 16px;" disabled>Test Post</button>
+            <div id="postStatus" class="status"></div>
+        </div>
+
+        <div class="section">
+            <h3>5. Post Review</h3>
+            <div id="automationStatus" class="automation-status">
+                Loading automation status...
+            </div>
+            <div id="pendingPosts" class="pending-posts">
+                Loading pending posts...
+            </div>
+        </div>
+    </div>
+
+    <div class="notifications" id="notifications"></div>
+
+    <div id="editModal" class="edit-modal">
+        <div class="edit-modal-content">
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('manual')">Manual Edit</div>
+                <div class="tab" onclick="switchTab('ai')">AI Regenerate</div>
+            </div>
+
+            <div id="manualTab" class="tab-content active">
+                <h4>Edit Caption</h4>
+                <textarea id="editCaption"></textarea>
+            </div>
+
+            <div id="aiTab" class="tab-content">
+                <h4>AI Style & Feedback</h4>
+                <div class="style-selector">
+                    <div class="style-option" data-style="professional">
+                        <div class="emoji">💼</div>
+                        Professional
+                    </div>
+                    <div class="style-option" data-style="artistic">
+                        <div class="emoji">🎨</div>
+                        Artistic
+                    </div>
+                    <div class="style-option" data-style="casual">
+                        <div class="emoji">😊</div>
+                        Casual
+                    </div>
+                    <div class="style-option" data-style="minimal">
+                        <div class="emoji">⚪</div>
+                        Minimal
+                    </div>
+                    <div class="style-option" data-style="storytelling">
+                        <div class="emoji">📖</div>
+                        Storytelling
+                    </div>
+                    <div class="style-option" data-style="technical">
+                        <div class="emoji">📱</div>
+                        Technical
+                    </div>
+                </div>
+                <p>Tell the AI how to improve the caption:</p>
+                <textarea id="aiFeedback" placeholder="e.g., 'Make it more professional' or 'Add more details about the scenery'"></textarea>
+            </div>
+
+            <div class="instagram-preview">
+                <div class="header">
+                    <div class="profile-pic"></div>
+                    <div class="username">Your Instagram Account</div>
+                </div>
+                <img id="previewImage" class="post-image" src="" alt="Post preview">
+                <div id="previewCaption" class="caption"></div>
+            </div>
+
+            <div class="edit-history" id="editHistory"></div>
+
+            <div class="actions">
+                <button onclick="saveEdit()" class="button confirm">Save Changes</button>
+                <button onclick="closeEditModal()" class="button">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedDropboxFolder = null;
+
+        // Connect Dropbox button
+        document.getElementById('connectDropboxBtn').onclick = function() {
+            window.location.href = '/auth/dropbox';
+        };
+
+        // Check URL parameters for auth callbacks
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('dropbox_success')) {
+                document.getElementById('dropboxStatus').textContent = 'Connected to Dropbox';
+                document.getElementById('folderSelector').style.display = 'block';
+                updateImageStats();
+            }
+            if (urlParams.has('error')) {
+                alert('Error: ' + urlParams.get('error'));
+            }
+        };
+
+        // Select folder button
+        document.getElementById('selectFolderBtn').onclick = async function() {
+            try {
+                const response = await fetch('/api/dropbox/list');
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Create folder selection modal
+                const modal = document.createElement('div');
+                modal.className = 'modal';
+                modal.innerHTML = `
+                    <div class="modal-content">
+                        <h3>Select Dropbox Folder</h3>
+                        <div class="folder-list">
+                            ${data.entries
+                                .filter(entry => entry['.tag'] === 'folder')
+                                .map(folder => `
+                                    <div class="folder-item" data-path="${folder.path_display}">
+                                        📁 ${folder.path_display}
+                                    </div>
+                                `).join('')}
+                        </div>
+                        <div class="modal-actions">
+                            <button onclick="this.closest('.modal').remove()">Cancel</button>
+                        </div>
+                    </div>
+                `;
+
+                document.body.appendChild(modal);
+
+                // Add click handlers
+                modal.querySelectorAll('.folder-item').forEach(item => {
+                    item.onclick = async () => {
+                        const path = item.dataset.path;
+                        
+                        try {
+                            const response = await fetch('/api/folder/select', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ path })
+                            });
+                            
+                            const data = await response.json();
+                            if (data.success) {
+                                selectedDropboxFolder = path;
+                                document.getElementById('selectedFolder').textContent = path;
+                                modal.remove();
+                                updateImageStats();
+                                previewNextImage();
+                            }
+                        } catch (error) {
+                            console.error('Error selecting folder:', error);
+                            alert('Error selecting folder');
+                        }
+                    };
+                });
+            } catch (error) {
+                console.error('Error listing folders:', error);
+                alert('Error listing Dropbox folders');
+            }
+        };
+
+        async function updateImageStats() {
+            try {
+                const response = await fetch('/api/images/remaining');
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                const statsDiv = document.getElementById('imageStats');
+                statsDiv.innerHTML = `
+                    <strong>Images Available:</strong> ${data.count} unposted images
+                    ${data.count < 5 ? '<br><span style="color: #f44336">Running low on images!</span>' : ''}
+                `;
+            } catch (error) {
+                console.error('Error updating stats:', error);
+            }
+        }
+
+        async function previewNextImage() {
+            if (!selectedDropboxFolder) return;
+
+            try {
+                const response = await fetch('/api/dropbox/list?path=' + encodeURIComponent(selectedDropboxFolder));
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Find first image
+                const image = data.entries.find(entry => 
+                    entry['.tag'] === 'file' && 
+                    /\.(jpg|jpeg|png)$/i.test(entry.name)
+                );
+
+                if (image) {
+                    const previewResponse = await fetch('/api/dropbox/preview?path=' + encodeURIComponent(image.path_display));
+                    const previewData = await previewResponse.json();
+                    
+                    document.getElementById('previewImage').src = previewData.link;
+                    generateCaption(previewData.link);
+                }
+            } catch (error) {
+                console.error('Error previewing image:', error);
+            }
+        }
+
+        async function generateCaption(imageUrl) {
+            try {
+                const style = document.getElementById('captionStyle').value;
+                const response = await fetch('/api/generate-caption', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ imageUrl, style })
+                });
+                
+                const data = await response.json();
+                if (data.caption) {
+                    document.getElementById('previewCaption').textContent = data.caption;
+                }
+            } catch (error) {
+                console.error('Caption error:', error);
+            }
+        }
+
+        // Style change handler
+        document.getElementById('captionStyle').onchange = () => {
+            const imageUrl = document.getElementById('previewImage').src;
+            if (imageUrl !== 'https://via.placeholder.com/400') {
+                generateCaption(imageUrl);
+            }
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check if already authenticated
+            fetch('/api/dropbox/list')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.error) {
+                        document.getElementById('dropboxStatus').textContent = 'Connected to Dropbox';
+                        document.getElementById('folderSelector').style.display = 'block';
+                        updateImageStats();
+                    }
+                })
+                .catch(() => {});
+        });
+    </script>
+</body>
+</html>
