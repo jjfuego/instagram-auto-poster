@@ -1,20 +1,26 @@
 {
-  "name": "fb-instagram-test",
+  "name": "instagram-auto-poster",
   "version": "1.0.0",
-  "description": "Test implementation for Facebook and Instagram APIs",
+  "description": "Automatically post images from Dropbox to Instagram with AI-generated captions",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "@huggingface/inference": "^2.8.1",
-    "dotenv": "^16.3.1",
+    "@huggingface/inference": "^2.6.4",
     "dropbox": "^10.34.0",
     "express": "^4.18.2",
-    "express-session": "^1.18.1",
-    "https-local": "^1.0.0",
-    "https-localhost": "^4.7.1",
-    "multer": "^1.4.5-lts.1",
-    "node-fetch": "^3.3.2"
-  }
+    "express-session": "^1.17.3",
+    "node-fetch": "^2.7.0"
+  },
+  "keywords": [
+    "instagram",
+    "dropbox",
+    "automation",
+    "ai",
+    "social-media"
+  ],
+  "author": "",
+  "license": "ISC"
 }
